@@ -252,10 +252,15 @@ void vFrtRegisterChannel(void (*f)(void *pcMessage, size_t ucMessageLength)){
 	pvChannelFunctions[ucChannelNum++] = f;
 }
 
+void vFrtCallbackFunction(void *pcMessage, size_t ucMessageLength){
+	/* Put your callback function */
+}
+
 void vprvFrtReadTraceLog(){
 	for (;;) {
 		switch (eFrtData.eState){
 		case eFrtDataStateInit:
+			vFrtRegisterChannel(vFrtCallbackFunction);
 			eFrtData.eState = eFrtDataStateServiceTask;
 			break;
 		case eFrtDataStateServiceTask:
@@ -285,7 +290,7 @@ void vprvFrtReadTraceLog(){
 			}
 
 			/* Delay this task for a predefined time */
-			//vTaskDelay(pdMS_TO_TICKS(READ_TRACE_LOG_PERIOD));
+			vTaskDelay(READ_TRACE_LOG_PERIOD);
 			break;
 		case eFrtDataStateError:
 			break;

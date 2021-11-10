@@ -11,7 +11,7 @@
 /* Read trace log task stack size */
 #define READ_TRACE_LOG_THREAD_STACK_SIZE (2048)
 /* Period for reading the trace message log in ms */
-#define READ_TRACE_LOG_PERIOD  (1000)
+#define READ_TRACE_LOG_PERIOD  (100)
 /* Maximum number of channels, for transmitting log messages, which can be registered */
 #define MAX_NUMBER_OF_CHANNELS (10)
 /* Read trace log task priority */
