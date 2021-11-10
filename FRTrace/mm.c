@@ -21,7 +21,7 @@ static RingBuffer_t xTraceLog = {
 void vMMRingBufferInit() {
 	for (int i = 0 ; i < LOG_SIZE ; i++){
 		xTraceLog.xBuffer[i].eStatus = eFREE;
-		strcpy(xTraceLog.xBuffer[i].pcMessage,"EMPTY");
+		//strcpy(xTraceLog.xBuffer[i].pcMessage,"EMPTY\r\n");
 	}
 };
 

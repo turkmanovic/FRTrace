@@ -12,6 +12,7 @@
 #include "queue.h"
 #include "stdio.h"
 #include "string.h"
+#include <logging.h>
 
 /*FRTrace include*/
 #include "frt.h"
@@ -27,7 +28,7 @@ typedef struct {
 	eFrtDataStateType eState;
 } eFrtDataType;
 
-static eFrtDataType eFrtData = {
+static eFrtDataType xFrtData = {
 		.eState = eFrtDataStateInit
 };
 
@@ -252,11 +253,16 @@ void vFrtRegisterChannel(void (*f)(void *pcMessage, size_t ucMessageLength)){
 	pvChannelFunctions[ucChannelNum++] = f;
 }
 
+void vFrtCallback(void *pcMessage, size_t ucMessageLength) {
+	LOG_Write("FRTRACE", LOG_MSG_TYPE_INFO, (char*)pcMessage);
+}
+
 void vprvFrtReadTraceLog(){
 	for (;;) {
-		switch (eFrtData.eState){
+		switch (xFrtData.eState){
 		case eFrtDataStateInit:
-			eFrtData.eState = eFrtDataStateServiceTask;
+			vFrtRegisterChannel(vFrtCallback);
+			xFrtData.eState = eFrtDataStateServiceTask;
 			break;
 		case eFrtDataStateServiceTask:
 			/* Read how many events have been missed due to buffer overflow, if any */
@@ -285,9 +291,10 @@ void vprvFrtReadTraceLog(){
 			}
 
 			/* Delay this task for a predefined time */
-			//vTaskDelay(pdMS_TO_TICKS(READ_TRACE_LOG_PERIOD));
+			vTaskDelay(pdMS_TO_TICKS(READ_TRACE_LOG_PERIOD));
 			break;
 		case eFrtDataStateError:
+			vTaskDelay(1);
 			break;
 		default:
 			break;
