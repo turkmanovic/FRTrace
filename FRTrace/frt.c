@@ -12,24 +12,32 @@
 #include "queue.h"
 #include "stdio.h"
 #include "string.h"
-#include <logging.h>
 
 /*FRTrace include*/
 #include "frt.h"
 #include "mm.h"
 
+/* Driver include */
+#include <drv_usart.h>
+
 typedef enum {
+	eFrtDataStateUndef,
 	eFrtDataStateInit,
 	eFrtDataStateServiceTask,
 	eFrtDataStateError
 } eFrtDataStateType;
 
 typedef struct {
+
 	eFrtDataStateType eState;
+
+	/* Trace log buffer occupancy */
+	uint32_t ulOccupancy;
+
 } eFrtDataType;
 
 static eFrtDataType xFrtData = {
-		.eState = eFrtDataStateInit
+		.eState = eFrtDataStateUndef
 };
 
 static uint8_t ucQueueType;
@@ -148,8 +156,7 @@ static channel_functions_t pvChannelFunctions[MAX_NUMBER_OF_CHANNELS];
 static uint8_t ucChannelNum = 0;
 /* Place holder for messages */
 static char pcMessage[MESSAGE_SIZE];
-/* Trace log buffer occupancy */
-static uint32_t ulOccupancy;
+
 /* Number of deleted messages in the trace log buffer due to overflow */
 static uint32_t ulOverwrittenMessages;
 
@@ -254,12 +261,15 @@ void vFrtRegisterChannel(void (*f)(void *pcMessage, size_t ucMessageLength)){
 }
 
 void vFrtCallback(void *pcMessage, size_t ucMessageLength) {
-	LOG_Write("FRTRACE", LOG_MSG_TYPE_INFO, (char*)pcMessage);
+	DRV_USART_Write(DRV_UART_7, (char*)pcMessage, ucMessageLength);
 }
 
 void vprvFrtReadTraceLog(){
 	for (;;) {
 		switch (xFrtData.eState){
+		case eFrtDataStateUndef:
+			vTaskDelay(1);
+			break;
 		case eFrtDataStateInit:
 			vFrtRegisterChannel(vFrtCallback);
 			xFrtData.eState = eFrtDataStateServiceTask;
@@ -275,15 +285,16 @@ void vprvFrtReadTraceLog(){
 			}
 
 			/* Acquire the current occupancy of the trace log buffer and send it to the user. */
-			ulOccupancy = ulMMRingBufferGetOccupancy();
+			xFrtData.ulOccupancy = ulMMRingBufferGetOccupancy();
 			/* If the buffer is empty, nothing will be sent */
-			if (ulOccupancy){
-				sprintf(pcMessage, "Occupancy: %lu/%i\n\r", ulOccupancy, LOG_SIZE);
+			if (xFrtData.ulOccupancy){
+				sprintf(pcMessage, "Occupancy: %lu/%i\n\r", xFrtData.ulOccupancy, LOG_SIZE);
 
 				for (int i = 0 ; i < ucChannelNum ; i++) (*pvChannelFunctions[i]) (pcMessage, strlen(pcMessage));
 
 				/* Read the whole trace log buffer and send all the read messages to all the registered channels. */
 				while(!(ucMMRingBufferIsEmpty()))
+				//for (uint16_t j = 0; j < xFrtData.ulOccupancy; j++)
 				{
 					vMMReadTraceLog(pcMessage);
 					for (int i = 0 ; i < ucChannelNum ; i++) (*pvChannelFunctions[i]) (pcMessage, strlen(pcMessage));
@@ -291,7 +302,7 @@ void vprvFrtReadTraceLog(){
 			}
 
 			/* Delay this task for a predefined time */
-			vTaskDelay(pdMS_TO_TICKS(READ_TRACE_LOG_PERIOD));
+			vTaskDelay(READ_TRACE_LOG_PERIOD);
 			break;
 		case eFrtDataStateError:
 			vTaskDelay(1);
@@ -304,6 +315,8 @@ void vprvFrtReadTraceLog(){
 
 eFrtStateType xFrtInit(void)
 {
+	if (xFrtData.eState != eFrtDataStateUndef) return eFrtStateError;
+
 	/* Initialize the trace log buffer */
 	vMMRingBufferInit();
 
@@ -314,6 +327,8 @@ eFrtStateType xFrtInit(void)
 			NULL,
 			READ_TRACE_LOG_PRIO,
 			NULL) != pdPASS) return eFrtStateError;
+
+	xFrtData.eState = eFrtDataStateInit;
 
 	return eFrtStateOk;
 }
