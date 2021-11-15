@@ -261,7 +261,7 @@ void vFrtRegisterChannel(void (*f)(void *pcMessage, size_t ucMessageLength)){
 }
 
 void vFrtCallback(void *pcMessage, size_t ucMessageLength) {
-	DRV_USART_Write(DRV_UART_7, (char*)pcMessage, ucMessageLength);
+	DRV_USART_Write(DRV_UART_7, (uint8_t*)pcMessage, (uint16_t)ucMessageLength);
 }
 
 void vprvFrtReadTraceLog(){
