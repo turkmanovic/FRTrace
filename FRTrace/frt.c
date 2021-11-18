@@ -17,8 +17,20 @@
 #include "frt.h"
 #include "mm.h"
 
-/* Driver include */
+/* Includes for specific projects */
 #include <drv_usart.h>
+#include <config.h>
+
+/* Read trace log task name */
+#define READ_TRACE_LOG_TASK_NAME			CONF_FRTRACE_TASK_NAME
+/* Read trace log task stack size */
+#define READ_TRACE_LOG_THREAD_STACK_SIZE	CONF_FRTRACE_TASK_STACK
+/* Period for reading the trace message log in ms */
+#define READ_TRACE_LOG_PERIOD				CONF_FRTRACE_LOG_PERIOD
+/* Maximum number of channels, for transmitting log messages, which can be registered */
+#define MAX_NUMBER_OF_CHANNELS				CONF_FRTRACE_MAX_NUM_CHANNLES
+/* Read trace log task priority */
+#define READ_TRACE_LOG_PRIO					CONF_FRTRACE_TASK_PRIO
 
 typedef enum {
 	eFrtDataStateUndef,
@@ -322,7 +334,7 @@ eFrtStateType xFrtInit(void)
 
 	/* Create a task used for reading the trace log. */
 	if (xTaskCreate(vprvFrtReadTraceLog,
-			"ReadTraceLogThread",
+			READ_TRACE_LOG_TASK_NAME,
 			READ_TRACE_LOG_THREAD_STACK_SIZE,
 			NULL,
 			READ_TRACE_LOG_PRIO,

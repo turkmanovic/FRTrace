@@ -8,15 +8,6 @@
 #ifndef SRC_FRTRACE_FRT_H_
 #define SRC_FRTRACE_FRT_H_
 
-/* Read trace log task stack size */
-#define READ_TRACE_LOG_THREAD_STACK_SIZE (1024)
-/* Period for reading the trace message log in ms */
-#define READ_TRACE_LOG_PERIOD  (100)
-/* Maximum number of channels, for transmitting log messages, which can be registered */
-#define MAX_NUMBER_OF_CHANNELS (10)
-/* Read trace log task priority */
-#define READ_TRACE_LOG_PRIO    (4)
-
 typedef enum {
 	eFrtStateOk,
 	eFrtStateError
